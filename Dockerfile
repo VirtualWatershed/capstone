@@ -13,6 +13,7 @@ RUN conda install --yes \
     scipy \
     netcdf4 \
     xarray \
+    mpltools \
     && conda clean -yt
 
 # Install Python 2 packages
@@ -25,6 +26,7 @@ RUN conda create -p $CONDA_DIR/envs/python2 python=2.7 \
     scipy \
     netcdf4 \
     xarray \
+    mpltools \
     && conda clean -yt
 
 COPY . /home/jovyan/work
