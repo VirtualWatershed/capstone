@@ -111,7 +111,12 @@ def run_many_prms(input_dirs, jwt,
     return None
 
 
-def download_many_outputs(mr_ids, jwt, output_dirs=None):
+def download_many_outputs(mr_ids, jwt, output_dirs=None, verify_ssl=False):
+
+    if not verify_ssl:
+        # this is the hack way according to a SO post I can no longer find
+        import ssl
+        ssl._create_default_https_context = ssl._create_unverified_context
 
     if output_dirs is None:
         use_mr_title_as_dir = True
@@ -129,7 +134,7 @@ def download_many_outputs(mr_ids, jwt, output_dirs=None):
 
             try:
 
-                signal.alarm(2)
+                signal.alarm(10)
 
                 mr = api.get_modelrun_by_id(mr_id)
 
@@ -137,10 +142,13 @@ def download_many_outputs(mr_ids, jwt, output_dirs=None):
                     output_dir = mr.title
                 else:
                     output_dir = output_dirs[idx]
+                statsfile = os.path.join(output_dir, 'statsvar.nc')
+                if os.path.exists(statsfile):
+                    os.remove(statsfile)
 
                 urllib.urlretrieve(
                     mr.resources[-1].resource_url,
-                    os.path.join(output_dir, 'statsvar.nc')
+                    statsfile
                 )
                 signal.alarm(0)
 
