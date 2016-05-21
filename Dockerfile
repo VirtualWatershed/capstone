@@ -13,7 +13,6 @@ RUN conda install --yes \
     scipy \
     netcdf4 \
     xarray \
-    mpltools \
     && conda clean -yt
 
 # Install Python 2 packages
@@ -26,7 +25,6 @@ RUN conda create -p $CONDA_DIR/envs/python2 python=2.7 \
     scipy \
     netcdf4 \
     xarray \
-    mpltools \
     && conda clean -yt
 
 COPY . /home/jovyan/work
@@ -37,8 +35,12 @@ USER root
 # install the vw python client for python3
 RUN  pip install git+https://github.com/VirtualWatershed/vwmodels-python-client.git@capstone
 
+RUN  pip install mpltools
+
 # install the vw python client for python2
 RUN $CONDA_DIR/envs/python2/bin/pip install git+https://github.com/VirtualWatershed/vwmodels-python-client.git@capstone
+
+RUN $CONDA_DIR/envs/python2/bin/pip install mpltools
 # Install Python 2 kernel spec globally to avoid permission problems when NB_UID
 # switching at runtime.
 RUN $CONDA_DIR/envs/python2/bin/python \
