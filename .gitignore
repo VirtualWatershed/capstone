@@ -2,3 +2,4 @@
 *.pyc
 token.py
 jwt.py
+data/scenarios

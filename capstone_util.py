@@ -17,8 +17,8 @@ from client.swagger_client.apis.default_api import DefaultApi
 
 
 def run_many_prms(input_dirs, jwt,
-                  auth_host='https://auth-test.virtualwatershed.org/api',
-                  model_host='https://model-test.virtualwatershed.org/api',
+                  auth_host='https://auth.virtualwatershed.org/api',
+                  model_host='https://model.virtualwatershed.org/api',
                   clobber=True,
                   verify_ssl=False):
     """
@@ -90,19 +90,14 @@ def run_many_prms(input_dirs, jwt,
 
     clear_output()
     print 'all runs finished, downloading results'
+
     # iterate over output_dir here since title and output dir are identical
     if not verify_ssl:
         import ssl
         ssl._create_default_https_context = ssl._create_unverified_context
 
-    download_many_outputs(mr_ids_title_lookup.keys(), jwt)
-
-    # for i, output_dir in mr_ids_title_lookup.iteritems():
-        # mr = api.get_modelrun_by_id(i)
-        # urllib.urlretrieve(
-            # mr.resources[-1].resource_url,
-            # os.path.join(output_dir, 'statsvar.nc')
-        # )
+    download_many_outputs(mr_ids_title_lookup.keys(), jwt,
+                          auth_host=auth_host, model_host=model_host)
 
     print 'all outputs have been downloaded'
 
@@ -111,7 +106,10 @@ def run_many_prms(input_dirs, jwt,
     return None
 
 
-def download_many_outputs(mr_ids, jwt, output_dirs=None, verify_ssl=False):
+def download_many_outputs(mr_ids, jwt, output_dirs=None,
+                          auth_host='https://auth.virtualwatershed.org',
+                          model_host='https://model.virtualwatershed.org',
+                          verify_ssl=False):
 
     if not verify_ssl:
         # this is the hack way according to a SO post I can no longer find
@@ -123,8 +121,7 @@ def download_many_outputs(mr_ids, jwt, output_dirs=None, verify_ssl=False):
 
     signal.signal(signal.SIGALRM, _timeout_handler)
 
-    cl = ModelApiClient(jwt, 'https://auth-test.virtualwatershed.org/api',
-                        'https://model-test.virtualwatershed.org/api')
+    cl = ModelApiClient(jwt, auth_host, model_host)
     api = DefaultApi(api_client=cl)
 
     for idx, mr_id in enumerate(mr_ids):
@@ -147,7 +144,7 @@ def download_many_outputs(mr_ids, jwt, output_dirs=None, verify_ssl=False):
                     os.remove(statsfile)
 
                 urllib.urlretrieve(
-                    mr.resources[-1].resource_url,
+                    get_resource_url(mr, 'statsvar'),
                     statsfile
                 )
                 signal.alarm(0)
@@ -157,6 +154,23 @@ def download_many_outputs(mr_ids, jwt, output_dirs=None, verify_ssl=False):
             except IOError as e:
 
                 print e.message
+
+
+def get_resource_url(model_run_obj, resource_type):
+
+    resources = model_run_obj.resources
+
+    try:
+        statsvar_url = [
+            r.resource_url
+            for r in resources if r.resource_type == resource_type
+        ].pop()
+
+    except IndexError:
+        print 'Resource type {} not recognized! Returning None'
+        return None
+
+    return statsvar_url
 
 
 def run_prms(data, param, control, jwt, output_dir, modelrun_title=None,
